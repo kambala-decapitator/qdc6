@@ -57,17 +57,24 @@ void printSupportedFormats()
 	qDebug() << "Supported image output formats:\n" << QImageWriter::supportedImageFormats();
 }
 
+QString convertedPath(const char* path)
+{
+	return QString::fromLocal8Bit(path);
+}
+
 int main(int argc, char* argv[])
 {
 	const Options paletteOpts{"-p", "--palette"};
 	const Options formatOpts{"-f", "--format"};
 	const Options qualityOpts{"-q", "--quality"};
+	const Options treatArgsAsPositionalsOpt{"--"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
 	const Options helpOpts{"-h", "--help"};
 	
 	const auto defaultFormat = "png";
 	auto printHelp = [&] {
-		qDebug() << "Usage:" << argv[0] << "[options] [dc6 paths...]\n\nOptions:";
+		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str());
+		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp << "[dc6 paths...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\tPalette file to use";
 		qDebug() << formatOpts << " <format>\tOutput image format, defaults to" << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
@@ -80,17 +87,23 @@ int main(int argc, char* argv[])
 	QString palettePath;
 	auto imageFormat = defaultFormat;
 	int imageQuality = -1;
+	auto treatArgsAsPositionals = false;
 	auto showSupportedFormats = false;
 	auto showHelp = false;
 
 	for (int i = 1; i < argc; ++i) {
+		if (treatArgsAsPositionals) {
+			dc6Paths << convertedPath(argv[i]);
+			continue;
+		}
+
 		const auto hasNextArg = i + 1 < argc;
 		if (containsOption(helpOpts, argv[i]))
 			showHelp = true;
 		else if (containsOption(supportedFormatsOpts, argv[i]))
 			showSupportedFormats = true;
 		else if (containsOption(paletteOpts, argv[i]) && hasNextArg)
-			palettePath = QString::fromLocal8Bit(argv[++i]);
+			palettePath = convertedPath(argv[++i]);
 		else if (containsOption(formatOpts, argv[i]) && hasNextArg)
 			imageFormat = argv[++i];
 		else if (containsOption(qualityOpts, argv[i]) && hasNextArg) {
@@ -105,8 +118,10 @@ int main(int argc, char* argv[])
 				qWarning() << "couldn't convert image quality to number, default setting will be used:" << e.what();
 			}
 		}
+		else if (containsOption(treatArgsAsPositionalsOpt, argv[i]))
+			treatArgsAsPositionals = true;
 		else
-			dc6Paths << QString::fromLocal8Bit(argv[i]);
+			dc6Paths << convertedPath(argv[i]);
 	}
 
 	if (showHelp || argc == 1) {
