@@ -60,12 +60,16 @@ void printSupportedFormats()
 int main(int argc, char* argv[])
 {
 	const Options paletteOpts{"-p", "--palette"};
+	const Options formatOpts{"-f", "--format"};
 	const Options qualityOpts{"-q", "--quality"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
 	const Options helpOpts{"-h", "--help"};
+	
+	const auto defaultFormat = "png";
 	auto printHelp = [&] {
 		qDebug() << "Usage:" << argv[0] << "[options] [dc6 paths...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\tPalette file to use";
+		qDebug() << formatOpts << " <format>\tOutput image format, defaults to" << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
 		qDebug() << helpOpts << "\t\tPrint this message\n";
@@ -74,6 +78,7 @@ int main(int argc, char* argv[])
 
 	QStringList dc6Paths;
 	QString palettePath;
+	auto imageFormat = defaultFormat;
 	int imageQuality = -1;
 	auto showSupportedFormats = false;
 	auto showHelp = false;
@@ -85,6 +90,8 @@ int main(int argc, char* argv[])
 			showSupportedFormats = true;
 		else if (containsOption(paletteOpts, argv[i]) && i+1 < argc)
 			palettePath = QString::fromLocal8Bit(argv[++i]);
+		else if (containsOption(formatOpts, argv[i]) && i+1 < argc)
+			imageFormat = argv[++i];
 		else if (containsOption(qualityOpts, argv[i]) && i+1 < argc) {
 			try {
 				imageQuality = std::stoi(argv[++i]);
@@ -212,13 +219,17 @@ int main(int argc, char* argv[])
 			QImage image(reinterpret_cast<const uchar*>(pixels.data()), frameHeader.width, frameHeader.height, QImage::Format_ARGB32_Premultiplied);
 			if (!frameHeader.isFlipped)
 				image = image.mirrored();
-			for (const auto ext : {"png", "jpg"}) {
-				QImageWriter imageWriter{QString("%1_%2.%3").arg(dc6BaseName).arg(j).arg(ext), ext};
-				if (imageQuality > -1)
-					imageWriter.setQuality(imageQuality);
-				if (!imageWriter.write(image))
-					qCritical() << imageWriter.errorString();
+
+			const auto outImageBaseName = QString("%1_%2.").arg(dc6BaseName).arg(j);
+			QImageWriter imageWriter{outImageBaseName + imageFormat};
+			if (!imageWriter.canWrite()) {
+				imageWriter.setFileName(outImageBaseName + defaultFormat);
+				qWarning() << "can't save using the specified format, falling back to" << defaultFormat;
 			}
+			if (imageQuality > -1)
+				imageWriter.setQuality(imageQuality);
+			if (!imageWriter.write(image))
+				qCritical() << "error saving output image:" << imageWriter.errorString();
 
 			++j;
 		}
