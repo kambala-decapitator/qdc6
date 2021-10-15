@@ -60,11 +60,13 @@ void printSupportedFormats()
 int main(int argc, char* argv[])
 {
 	const Options paletteOpts{"-p", "--palette"};
+	const Options qualityOpts{"-q", "--quality"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
 	const Options helpOpts{"-h", "--help"};
 	auto printHelp = [&] {
 		qDebug() << "Usage:" << argv[0] << "[options] [dc6 paths...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\tPalette file to use";
+		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
 		qDebug() << helpOpts << "\t\tPrint this message\n";
 		printSupportedFormats();
@@ -72,6 +74,7 @@ int main(int argc, char* argv[])
 
 	QStringList dc6Paths;
 	QString palettePath;
+	int imageQuality = -1;
 	auto showSupportedFormats = false;
 	auto showHelp = false;
 
@@ -82,6 +85,18 @@ int main(int argc, char* argv[])
 			showSupportedFormats = true;
 		else if (containsOption(paletteOpts, argv[i]) && i+1 < argc)
 			palettePath = QString::fromLocal8Bit(argv[++i]);
+		else if (containsOption(qualityOpts, argv[i]) && i+1 < argc) {
+			try {
+				imageQuality = std::stoi(argv[++i]);
+				if (imageQuality < 0 || imageQuality > 100) {
+					imageQuality = -1;
+					qWarning() << "image quality exceeds valid range, default setting will be used";
+				}
+			}
+			catch (const std::exception& e) {
+				qWarning() << "couldn't convert image quality to number, default setting will be used:" << e.what();
+			}
+		}
 		else
 			dc6Paths << QString::fromLocal8Bit(argv[i]);
 	}
@@ -199,7 +214,8 @@ int main(int argc, char* argv[])
 				image = image.mirrored();
 			for (const auto ext : {"png", "jpg"}) {
 				QImageWriter imageWriter{QString("%1_%2.%3").arg(dc6BaseName).arg(j).arg(ext), ext};
-				// imageWriter.setQuality(100);
+				if (imageQuality > -1)
+					imageWriter.setQuality(imageQuality);
 				if (!imageWriter.write(image))
 					qCritical() << imageWriter.errorString();
 			}
