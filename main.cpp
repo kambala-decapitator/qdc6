@@ -84,15 +84,16 @@ int main(int argc, char* argv[])
 	auto showHelp = false;
 
 	for (int i = 1; i < argc; ++i) {
+		const auto hasNextArg = i + 1 < argc;
 		if (containsOption(helpOpts, argv[i]))
 			showHelp = true;
 		else if (containsOption(supportedFormatsOpts, argv[i]))
 			showSupportedFormats = true;
-		else if (containsOption(paletteOpts, argv[i]) && i+1 < argc)
+		else if (containsOption(paletteOpts, argv[i]) && hasNextArg)
 			palettePath = QString::fromLocal8Bit(argv[++i]);
-		else if (containsOption(formatOpts, argv[i]) && i+1 < argc)
+		else if (containsOption(formatOpts, argv[i]) && hasNextArg)
 			imageFormat = argv[++i];
-		else if (containsOption(qualityOpts, argv[i]) && i+1 < argc) {
+		else if (containsOption(qualityOpts, argv[i]) && hasNextArg) {
 			try {
 				imageQuality = std::stoi(argv[++i]);
 				if (imageQuality < 0 || imageQuality > 100) {
