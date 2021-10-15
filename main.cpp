@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 
 	QFile paletteFile{palettePath};
 	if (!paletteFile.open(QFile::ReadOnly)) {
-		qCritical() << "error opening palette file:" << f.errorString();
+		qCritical() << "error opening palette file:" << paletteFile.errorString();
 		return 1;
 	}
 
