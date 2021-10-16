@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -70,7 +71,7 @@ int main(int argc, char* argv[])
 	const Options treatArgsAsPositionalsOpt{"--"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
 	const Options helpOpts{"-h", "--help"};
-	
+
 	const auto defaultFormat = "png";
 	auto printHelp = [&] {
 		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str());
@@ -91,33 +92,43 @@ int main(int argc, char* argv[])
 	auto showSupportedFormats = false;
 	auto showHelp = false;
 
+	using Argument = const char*;
 	for (int i = 1; i < argc; ++i) {
 		if (treatArgsAsPositionals) {
 			dc6Paths << convertedPath(argv[i]);
 			continue;
 		}
 
-		const auto hasNextArg = i + 1 < argc;
+		auto processNextArg = [&](const std::function<void(Argument)>& processor) {
+			if (i + 1 < argc)
+				processor(argv[++i]);
+		};
+
 		if (containsOption(helpOpts, argv[i]))
 			showHelp = true;
 		else if (containsOption(supportedFormatsOpts, argv[i]))
 			showSupportedFormats = true;
-		else if (containsOption(paletteOpts, argv[i]) && hasNextArg)
-			palettePath = convertedPath(argv[++i]);
-		else if (containsOption(formatOpts, argv[i]) && hasNextArg)
-			imageFormat = argv[++i];
-		else if (containsOption(qualityOpts, argv[i]) && hasNextArg) {
-			try {
-				imageQuality = std::stoi(argv[++i]);
-				if (imageQuality < 0 || imageQuality > 100) {
-					imageQuality = -1;
-					qWarning() << "image quality exceeds valid range, default setting will be used";
+		else if (containsOption(paletteOpts, argv[i]))
+			processNextArg([&](Argument arg) {
+				palettePath = convertedPath(arg);
+			});
+		else if (containsOption(formatOpts, argv[i]))
+			processNextArg([&](Argument arg) {
+				imageFormat = arg;
+			});
+		else if (containsOption(qualityOpts, argv[i]))
+			processNextArg([&](Argument arg) {
+				try {
+					imageQuality = std::stoi(arg);
+					if (imageQuality < 0 || imageQuality > 100) {
+						imageQuality = -1;
+						qWarning() << "image quality exceeds valid range, default setting will be used";
+					}
 				}
-			}
-			catch (const std::exception& e) {
-				qWarning() << "couldn't convert image quality to number, default setting will be used:" << e.what();
-			}
-		}
+				catch (const std::exception& e) {
+					qWarning() << "couldn't convert image quality to number, default setting will be used:" << e.what();
+				}
+			});
 		else if (containsOption(treatArgsAsPositionalsOpt, argv[i]))
 			treatArgsAsPositionals = true;
 		else
