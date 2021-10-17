@@ -1,6 +1,7 @@
 #include <QColor>
 #include <QDataStream>
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
@@ -68,6 +69,7 @@ int main(int argc, char* argv[])
 	const Options paletteOpts{"-p", "--palette"};
 	const Options formatOpts{"-f", "--format"};
 	const Options qualityOpts{"-q", "--quality"};
+	const Options outDirOpts{"-o", "--out-dir"};
 	const Options treatArgsAsPositionalsOpt{"--"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
 	const Options helpOpts{"-h", "--help"};
@@ -79,6 +81,7 @@ int main(int argc, char* argv[])
 		qDebug() << paletteOpts << " <file>\tPalette file to use";
 		qDebug() << formatOpts << " <format>\tOutput image format, defaults to" << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
+		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
 		qDebug() << helpOpts << "\t\tPrint this message\n";
 		printSupportedFormats();
@@ -88,6 +91,7 @@ int main(int argc, char* argv[])
 	QString palettePath;
 	auto imageFormat = defaultFormat;
 	int imageQuality = -1;
+	QString outDirPath;
 	auto treatArgsAsPositionals = false;
 	auto showSupportedFormats = false;
 	auto showHelp = false;
@@ -129,6 +133,10 @@ int main(int argc, char* argv[])
 					qWarning() << "couldn't convert image quality to number, default setting will be used:" << e.what();
 				}
 			});
+		else if (containsOption(outDirOpts, argv[i]))
+			processNextArg([&](Argument arg) {
+				outDirPath = convertedPath(arg);
+			});
 		else if (containsOption(treatArgsAsPositionalsOpt, argv[i]))
 			treatArgsAsPositionals = true;
 		else
@@ -150,6 +158,10 @@ int main(int argc, char* argv[])
 	}
 	if (dc6Paths.isEmpty()) {
 		qWarning() << "no input files specified";
+		return 1;
+	}
+	if (!outDirPath.isEmpty() && !QDir{outDirPath}.mkpath(".")) {
+		qCritical() << "unable to create output directory at" << outDirPath;
 		return 1;
 	}
 
@@ -247,7 +259,10 @@ int main(int argc, char* argv[])
 			if (!frameHeader.isFlipped)
 				image = image.mirrored();
 
-			const auto outImageBaseName = QString("%1_%2.").arg(dc6BaseName).arg(j);
+			auto outImageBaseName = QString("%1_%2.").arg(dc6BaseName).arg(j);
+			if (!outDirPath.isEmpty())
+				outImageBaseName.prepend(outDirPath + '/');
+
 			QImageWriter imageWriter{outImageBaseName + imageFormat};
 			if (!imageWriter.canWrite()) {
 				imageWriter.setFileName(outImageBaseName + defaultFormat);
