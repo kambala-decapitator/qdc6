@@ -267,7 +267,10 @@ int main(int argc, char* argv[])
 			if (!frameHeader.isFlipped)
 				image = image.mirrored();
 
-			auto outImageBaseName = QString("%1_%2.").arg(dc6BaseName).arg(j);
+			auto outImageBaseName = dc6BaseName;
+			if (framesTotal > 1)
+				outImageBaseName += QString("_%1").arg(j);
+			outImageBaseName += '.';
 			if (!outDirPath.isEmpty())
 				outImageBaseName.prepend(outDirPath + '/');
 
