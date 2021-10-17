@@ -8,10 +8,14 @@
 #include <QImageWriter>
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
+
+static constexpr auto PaletteSize = 256;
+static constexpr auto PaletteComponents = 3;
 
 struct Dc6Header
 {
@@ -170,17 +174,21 @@ int main(int argc, char* argv[])
 		qCritical() << "error opening palette file:" << paletteFile.errorString();
 		return 1;
 	}
+	const auto paletteFileSize = QFileInfo{paletteFile}.size();
+	if (paletteFileSize != PaletteSize * PaletteComponents) {
+		qCritical() << "palette file has wrong size:" << paletteFileSize;
+		return 1;
+	}
 
 	std::vector<QRgb> colorPalette;
-	colorPalette.reserve(256);
+	colorPalette.reserve(PaletteSize);
 
 	QDataStream ds{&paletteFile};
 	while (!ds.atEnd()) {
-		uint8_t r, g, b;
-		ds >> b >> g >> r;
-		colorPalette.push_back(qRgb(r, g, b));
+		std::array<uint8_t, PaletteComponents> bgr;
+		ds >> bgr[0] >> bgr[1] >> bgr[2];
+		colorPalette.push_back(qRgb(bgr[2], bgr[1], bgr[0]));
 	}
-	Q_ASSERT(colorPalette.size() == 256);
 	paletteFile.close();
 
 	for (const auto& dc6Path : dc6Paths) {
