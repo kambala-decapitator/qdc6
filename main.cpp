@@ -74,6 +74,7 @@ int main(int argc, char* argv[])
 	const Options formatOpts{"-f", "--format"};
 	const Options qualityOpts{"-q", "--quality"};
 	const Options outDirOpts{"-o", "--out-dir"};
+	const Options separateDirOpts{"-d", "--separate-dir"};
 	const Options treatArgsAsPositionalsOpt{"--"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
 	const Options helpOpts{"-h", "--help"};
@@ -86,6 +87,7 @@ int main(int argc, char* argv[])
 		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to" << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
+		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
 		qDebug() << helpOpts << "\t\t\tPrint this message\n";
 		printSupportedFormats();
@@ -96,6 +98,7 @@ int main(int argc, char* argv[])
 	auto imageFormat = defaultFormat;
 	int imageQuality = -1;
 	QString outDirPath;
+	auto useSeparateDir = false;
 	auto treatArgsAsPositionals = false;
 	auto showSupportedFormats = false;
 	auto showHelp = false;
@@ -141,6 +144,8 @@ int main(int argc, char* argv[])
 			processNextArg([&](Argument arg) {
 				outDirPath = convertedPath(arg);
 			});
+		else if (containsOption(separateDirOpts, argv[i]))
+			useSeparateDir = true;
 		else if (containsOption(treatArgsAsPositionalsOpt, argv[i]))
 			treatArgsAsPositionals = true;
 		else
@@ -221,6 +226,18 @@ int main(int argc, char* argv[])
 			ds >> frameIndexes[i];
 
 		const auto dc6BaseName = QFileInfo{f}.completeBaseName();
+		auto outImageBasePath = dc6BaseName;
+		if (!outDirPath.isEmpty())
+			outImageBasePath.prepend(outDirPath + '/');
+		if (framesTotal > 1) {
+			if (useSeparateDir) {
+				QDir{outImageBasePath}.mkpath(".");
+				outImageBasePath += '/';
+			}
+			else
+				outImageBasePath += '_';
+		}
+
 		std::size_t j = 0;
 		for (auto index : frameIndexes) {
 			f.seek(index);
@@ -267,12 +284,10 @@ int main(int argc, char* argv[])
 			if (!frameHeader.isFlipped)
 				image = image.mirrored();
 
-			auto outImageBaseName = dc6BaseName;
+			auto outImageBaseName = outImageBasePath;
 			if (framesTotal > 1)
-				outImageBaseName += QString("_%1").arg(j);
+				outImageBaseName += QString::number(j);
 			outImageBaseName += '.';
-			if (!outDirPath.isEmpty())
-				outImageBaseName.prepend(outDirPath + '/');
 
 			QImageWriter imageWriter{outImageBaseName + imageFormat};
 			if (!imageWriter.canWrite()) {
