@@ -80,12 +80,14 @@ int main(int argc, char* argv[])
 	const Options helpOpts{"-h", "--help"};
 
 	const auto defaultFormat = "png";
+	const auto minQuality = 0;
+	const auto maxQuality = 100;
 	auto printHelp = [&] {
 		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str()).toLatin1();
 		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[dc6 paths...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\t\tPalette file to use, defaults to the embedded one";
 		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to" << defaultFormat;
-		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
+		qDebug() << qualityOpts << " <integer>\tOutput image quality in range from" << minQuality << "to" << maxQuality << "inclusive";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
@@ -131,7 +133,7 @@ int main(int argc, char* argv[])
 			processNextArg([&](Argument arg) {
 				try {
 					imageQuality = std::stoi(arg);
-					if (imageQuality < 0 || imageQuality > 100) {
+					if (imageQuality < minQuality || imageQuality > maxQuality) {
 						imageQuality = -1;
 						qWarning() << "image quality exceeds valid range, default setting will be used";
 					}
