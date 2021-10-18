@@ -45,7 +45,7 @@ using Options = std::vector<std::string>;
 QDebug operator<<(QDebug d, const Options& opts)
 {
 	Q_ASSERT(!opts.empty());
-	d.nospace() << opts.front().c_str();
+	d.nospace() << "  " << opts.front().c_str();
 	std::for_each(std::next(opts.cbegin()), opts.cend(), [&](const Options::value_type& opt) {
 		d << ", " << opt.c_str();
 	});
@@ -80,14 +80,14 @@ int main(int argc, char* argv[])
 
 	const auto defaultFormat = "png";
 	auto printHelp = [&] {
-		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str());
-		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp << "[dc6 paths...]\n\nOptions:";
-		qDebug() << paletteOpts << " <file>\tPalette file to use";
-		qDebug() << formatOpts << " <format>\tOutput image format, defaults to" << defaultFormat;
+		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str()).toLatin1();
+		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[dc6 paths...]\n\nOptions:";
+		qDebug() << paletteOpts << " <file>\t\tPalette file to use";
+		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to" << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
-		qDebug() << helpOpts << "\t\tPrint this message\n";
+		qDebug() << helpOpts << "\t\t\tPrint this message\n";
 		printSupportedFormats();
 	};
 
