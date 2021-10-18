@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
 			continue;
 		}
 
-		ds >> header.terminator;
+		ds.skipRawData(sizeof header.terminator);
 		ds >> header.directions;
 		ds >> header.framesPerDirection;
 		const auto framesTotal = header.directions * header.framesPerDirection;
@@ -247,9 +247,9 @@ int main(int argc, char* argv[])
 			ds >> frameHeader.isFlipped;
 			ds >> frameHeader.width;
 			ds >> frameHeader.height;
-			ds >> frameHeader.offsetX;
-			ds >> frameHeader.offsetY;
-			ds >> frameHeader.alwaysZero;
+			ds.skipRawData(sizeof frameHeader.offsetX);
+			ds.skipRawData(sizeof frameHeader.offsetY);
+			ds.skipRawData(sizeof frameHeader.alwaysZero);
 			ds >> frameHeader.nextFrameIndex;
 			ds >> frameHeader.length;
 			qDebug() << "w =" << frameHeader.width << "h =" << frameHeader.height << "l =" << frameHeader.length;
