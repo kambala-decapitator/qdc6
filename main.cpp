@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	auto printHelp = [&] {
 		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str()).toLatin1();
 		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[dc6 paths...]\n\nOptions:";
-		qDebug() << paletteOpts << " <file>\t\tPalette file to use";
+		qDebug() << paletteOpts << " <file>\t\tPalette file to use, defaults to the embedded one";
 		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to" << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range 0-100";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
@@ -161,10 +161,6 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	if (palettePath.isEmpty()) {
-		qCritical() << "palette file is required";
-		return 1;
-	}
 	if (dc6Paths.isEmpty()) {
 		qWarning() << "no input files specified";
 		return 1;
@@ -174,6 +170,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	if (palettePath.isEmpty())
+		palettePath = QLatin1String{":/units_pal.dat"};
 	QFile paletteFile{palettePath};
 	if (!paletteFile.open(QFile::ReadOnly)) {
 		qCritical() << "error opening palette file:" << paletteFile.errorString();

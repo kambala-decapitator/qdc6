@@ -9,3 +9,4 @@ equals(QT_MAJOR_VERSION, 4) {
 }
 
 SOURCES += main.cpp
+RESOURCES += resources.qrc
