@@ -90,9 +90,9 @@ int main(int argc, char* argv[])
 
 		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[dc6 paths...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\t\tPalette file to use, defaults to the embedded one";
-		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to" << defaultFormat;
-		qDebug() << qualityOpts << " <integer>\tOutput image quality in range from" << minQuality << "to" << maxQuality << "inclusive";
-		qDebug() << transparentColorOpts << " <str>\tColor to use as transparent, defaults to" << defaultTransparentColorStr.constData() << ", see QColor::setNamedColor() for full list of supported formats";
+		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to " << defaultFormat;
+		qDebug() << qualityOpts << " <integer>\tOutput image quality in range " << minQuality << '-' << maxQuality << " inclusive";
+		qDebug() << transparentColorOpts << " <str>\tColor to use as transparent, defaults to " << defaultTransparentColorStr.constData() << ", see QColor::setNamedColor() for full list of supported formats";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
