@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
 	const Options paletteOpts{"-p", "--palette"};
 	const Options formatOpts{"-f", "--format"};
 	const Options qualityOpts{"-q", "--quality"};
+	const Options transparentColorOpts{"-t", "--transparent-color"};
 	const Options outDirOpts{"-o", "--out-dir"};
 	const Options separateDirOpts{"-d", "--separate-dir"};
 	const Options treatArgsAsPositionalsOpt{"--"};
@@ -82,12 +83,16 @@ int main(int argc, char* argv[])
 	const auto defaultFormat = "png";
 	const auto minQuality = 0;
 	const auto maxQuality = 100;
+	const auto defaultTransparentColor = qRgba(0, 0, 0, 0);
 	auto printHelp = [&] {
 		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str()).toLatin1();
+		const auto defaultTransparentColorStr = QColor{defaultTransparentColor}.name().toLatin1();
+
 		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[dc6 paths...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\t\tPalette file to use, defaults to the embedded one";
 		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to" << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range from" << minQuality << "to" << maxQuality << "inclusive";
+		qDebug() << transparentColorOpts << " <str>\tColor to use as transparent, defaults to" << defaultTransparentColorStr.constData() << ", see QColor::setNamedColor() for full list of supported formats";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
@@ -99,6 +104,7 @@ int main(int argc, char* argv[])
 	QString palettePath;
 	auto imageFormat = defaultFormat;
 	int imageQuality = -1;
+	auto transparentColor = defaultTransparentColor;
 	QString outDirPath;
 	auto useSeparateDir = false;
 	auto treatArgsAsPositionals = false;
@@ -141,6 +147,12 @@ int main(int argc, char* argv[])
 				catch (const std::exception& e) {
 					qWarning() << "couldn't convert image quality to number, default setting will be used:" << e.what();
 				}
+			});
+		else if (containsOption(transparentColorOpts, argv[i]))
+			processNextArg([&](Argument arg) {
+				const QColor color{arg};
+				if (color.isValid())
+					transparentColor = color.rgba();
 			});
 		else if (containsOption(outDirOpts, argv[i]))
 			processNextArg([&](Argument arg) {
@@ -254,7 +266,7 @@ int main(int argc, char* argv[])
 			ds >> frameHeader.length;
 			qDebug() << "w =" << frameHeader.width << "h =" << frameHeader.height << "l =" << frameHeader.length;
 
-			std::vector<QRgb> pixels(frameHeader.width * frameHeader.height, qRgba(0, 0, 0, 0));
+			std::vector<QRgb> pixels(frameHeader.width * frameHeader.height, transparentColor);
 			std::size_t pixI = 0;
 			for (std::size_t i = 0; i < frameHeader.length; ++i) {
 				uint8_t pixel;
