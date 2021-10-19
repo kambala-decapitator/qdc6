@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 		const auto treatArgsAsPositionalsOptHelp = QString{"[%1]"}.arg(treatArgsAsPositionalsOpt.front().c_str()).toLatin1();
 		const auto defaultTransparentColorStr = QColor{defaultTransparentColor}.name().toLatin1();
 
-		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[dc6 paths...]\n\nOptions:";
+		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[directory or dc6 path...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\t\tPalette file to use, defaults to the embedded one";
 		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to " << defaultFormat;
 		qDebug() << qualityOpts << " <integer>\tOutput image quality in range " << minQuality << '-' << maxQuality << " inclusive";
@@ -182,6 +182,17 @@ int main(int argc, char* argv[])
 	if (!outDirPath.isEmpty() && !QDir{outDirPath}.mkpath(".")) {
 		qCritical() << "unable to create output directory at" << outDirPath;
 		return 1;
+	}
+
+	for (int i = 0; i < dc6Paths.size(); ++i) {
+		const QDir dir{dc6Paths[i]};
+		if (!dir.exists())
+			continue;
+		dc6Paths.removeAt(i--);
+
+		const auto dc6InDir = dir.entryList({QLatin1String{"*.dc6"}}, QDir::Files | QDir::Readable);
+		for (const auto& dc6Filename : dc6InDir)
+			dc6Paths += dir.absoluteFilePath(dc6Filename);
 	}
 
 	if (palettePath.isEmpty())
