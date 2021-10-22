@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 	const Options transparentColorOpts{"-t", "--transparent-color"};
 	const Options outDirOpts{"-o", "--out-dir"};
 	const Options separateDirOpts{"-d", "--separate-dir"};
+	const Options verboseOpts{"-v", "--verbose"};
 	const Options treatArgsAsPositionalsOpt{"--"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
 	const Options helpOpts{"-h", "--help"};
@@ -95,6 +96,8 @@ int main(int argc, char* argv[])
 		qDebug() << transparentColorOpts << " <str>\tColor to use as transparent, defaults to " << defaultTransparentColorStr.constData() << ", see QColor::setNamedColor() for full list of supported formats";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
+		qDebug() << verboseOpts << "\t\t\tVerbose output";
+		qDebug();
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
 		qDebug() << helpOpts << "\t\t\tPrint this message\n";
 		printSupportedFormats();
@@ -108,6 +111,7 @@ int main(int argc, char* argv[])
 	QString outDirPath;
 	auto useSeparateDir = false;
 	auto treatArgsAsPositionals = false;
+	auto verboseOutput = false;
 	auto showSupportedFormats = false;
 	auto showHelp = false;
 
@@ -160,6 +164,8 @@ int main(int argc, char* argv[])
 			});
 		else if (containsOption(separateDirOpts, argv[i]))
 			useSeparateDir = true;
+		else if (containsOption(verboseOpts, argv[i]))
+			verboseOutput = true;
 		else if (containsOption(treatArgsAsPositionalsOpt, argv[i]))
 			treatArgsAsPositionals = true;
 		else
@@ -191,12 +197,17 @@ int main(int argc, char* argv[])
 		dc6Paths.removeAt(i--);
 
 		const auto dc6InDir = dir.entryList({QLatin1String{"*.dc6"}}, QDir::Files | QDir::Readable);
+		if (verboseOutput)
+			qDebug() << "files in dir" << dir << ':' << dc6InDir;
 		for (const auto& dc6Filename : dc6InDir)
 			dc6Paths += dir.absoluteFilePath(dc6Filename);
 	}
 
-	if (palettePath.isEmpty())
+	if (palettePath.isEmpty()) {
 		palettePath = QLatin1String{":/units_pal.dat"};
+		if (verboseOutput)
+			qDebug() << "using embedded palette";
+	}
 	QFile paletteFile{palettePath};
 	if (!paletteFile.open(QFile::ReadOnly)) {
 		qCritical() << "error opening palette file:" << paletteFile.errorString();
@@ -220,6 +231,9 @@ int main(int argc, char* argv[])
 	paletteFile.close();
 
 	for (const auto& dc6Path : dc6Paths) {
+		if (verboseOutput)
+			qDebug() << "processing file" << dc6Path;
+
 		QFile f{dc6Path};
 		if (!f.open(QFile::ReadOnly)) {
 			qCritical() << "error opening dc6 file:" << dc6Path << '\n' << f.errorString();
@@ -241,7 +255,8 @@ int main(int argc, char* argv[])
 		ds >> header.directions;
 		ds >> header.framesPerDirection;
 		const auto framesTotal = header.directions * header.framesPerDirection;
-		qDebug() << header.directions << "direction(s) with" << header.framesPerDirection << "frame(s) =" << framesTotal << "frames total";
+		if (verboseOutput)
+			qDebug() << header.directions << "direction(s) with" << header.framesPerDirection << "frame(s) =" << framesTotal << "frames total";
 
 		std::vector<uint32_t> frameIndexes;
 		frameIndexes.resize(framesTotal);
@@ -264,7 +279,9 @@ int main(int argc, char* argv[])
 		std::size_t j = 0;
 		for (auto index : frameIndexes) {
 			f.seek(index);
-			qDebug() << j << "frame, index =" << index;
+
+			if (verboseOutput)
+				qDebug() << "frame index" << j << ", offset" << index;
 
 			Dc6FrameHeader frameHeader;
 			ds >> frameHeader.isFlipped;
@@ -275,7 +292,9 @@ int main(int argc, char* argv[])
 			ds.skipRawData(sizeof frameHeader.alwaysZero);
 			ds >> frameHeader.nextFrameIndex;
 			ds >> frameHeader.length;
-			qDebug() << "w =" << frameHeader.width << "h =" << frameHeader.height << "l =" << frameHeader.length;
+
+			if (verboseOutput)
+				qDebug() << "width =" << frameHeader.width << ", height =" << frameHeader.height << ", length =" << frameHeader.length;
 
 			std::vector<QRgb> pixels(frameHeader.width * frameHeader.height, transparentColor);
 			std::size_t pixI = 0;
@@ -317,13 +336,20 @@ int main(int argc, char* argv[])
 				imageWriter.setFileName(outImageBaseName + defaultFormat);
 				qWarning() << "can't save using the specified format, falling back to" << defaultFormat;
 			}
+			if (verboseOutput)
+				qDebug() << "save image to" << imageWriter.fileName();
 			if (imageQuality > -1)
 				imageWriter.setQuality(imageQuality);
 			if (!imageWriter.write(image))
 				qCritical() << "error saving output image:" << imageWriter.errorString();
 
 			++j;
+			if (verboseOutput)
+				qDebug() << "-----";
 		}
 	}
+
+	if (verboseOutput)
+		qDebug() << "all images processed";
 	return 0;
 }
