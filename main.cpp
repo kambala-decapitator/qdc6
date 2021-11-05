@@ -7,6 +7,11 @@
 #include <QImage>
 #include <QImageWriter>
 
+#if SVG_ENABLED
+#include <QPainter>
+#include <QSvgGenerator>
+#endif
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -16,6 +21,10 @@
 
 static constexpr auto PaletteSize = 256;
 static constexpr auto PaletteComponents = 3;
+
+#if SVG_ENABLED
+static constexpr auto svgFormat = "svg";
+#endif
 
 struct Dc6Header
 {
@@ -60,13 +69,44 @@ bool containsOption(const Options& opts, const char* s)
 
 void printSupportedFormats()
 {
-	qDebug() << "Supported image output formats:\n" << QImageWriter::supportedImageFormats();
+	qDebug() << "Supported image output formats:\n" << QImageWriter::supportedImageFormats()
+#if SVG_ENABLED
+			 << "and" << svgFormat
+#endif
+				;
 }
 
 QString convertedPath(const char* path)
 {
 	return QString::fromLocal8Bit(path);
 }
+
+#if SVG_ENABLED
+void saveSvg(const QString& fileName, const QImage& image)
+{
+	const auto size = image.size();
+
+	QSvgGenerator svg;
+	svg.setFileName(fileName);
+	svg.setSize(size);
+	svg.setViewBox(QRect{{}, size});
+	svg.setTitle(QFileInfo{fileName}.completeBaseName());
+
+	QPainter painter;
+	if (!painter.begin(&svg)) {
+		qCritical() << "can't save svg to" << fileName;
+		return;
+	}
+
+	const auto pixels = reinterpret_cast<const QRgb*>(image.bits());
+	for (int x = 0; x < size.width(); ++x) {
+		for (int y = 0; y < size.height(); ++y) {
+			painter.setPen(QColor::fromRgba(pixels[y * size.width() + x]));
+			painter.drawPoint(x, y);
+		}
+	}
+}
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -92,7 +132,11 @@ int main(int argc, char* argv[])
 		qDebug() << "Usage:" << argv[0] << "[options]" << treatArgsAsPositionalsOptHelp.constData() << "[directory or dc6 path...]\n\nOptions:";
 		qDebug() << paletteOpts << " <file>\t\tPalette file to use, defaults to the embedded one";
 		qDebug() << formatOpts << " <format>\t\tOutput image format, defaults to " << defaultFormat;
-		qDebug() << qualityOpts << " <integer>\tOutput image quality in range " << minQuality << '-' << maxQuality << " inclusive";
+		qDebug() << qualityOpts << " <integer>\tOutput image quality in range " << minQuality << '-' << maxQuality << " inclusive"
+#if SVG_ENABLED
+				 << ", doesn't apply to " << svgFormat
+#endif
+					;
 		qDebug() << transparentColorOpts << " <str>\tColor to use as transparent, defaults to " << defaultTransparentColorStr.constData() << ", see QColor::setNamedColor() for full list of supported formats";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
@@ -330,18 +374,31 @@ int main(int argc, char* argv[])
 			if (framesTotal > 1)
 				outImageBaseName += QString::number(j);
 			outImageBaseName += '.';
+			const auto outFileName = outImageBaseName + imageFormat;
 
-			QImageWriter imageWriter{outImageBaseName + imageFormat};
-			if (!imageWriter.canWrite()) {
-				imageWriter.setFileName(outImageBaseName + defaultFormat);
-				qWarning() << "can't save using the specified format, falling back to" << defaultFormat;
+			auto verbosePrintOutFileName = [&](const QString& fileName) {
+				if (verboseOutput)
+					qDebug() << "save image to" << fileName;
+			};
+#if SVG_ENABLED
+			if (outFileName.endsWith(QLatin1String{svgFormat}, Qt::CaseInsensitive)) {
+				verbosePrintOutFileName(outFileName);
+				saveSvg(outFileName, image);
 			}
-			if (verboseOutput)
-				qDebug() << "save image to" << imageWriter.fileName();
-			if (imageQuality > -1)
-				imageWriter.setQuality(imageQuality);
-			if (!imageWriter.write(image))
-				qCritical() << "error saving output image:" << imageWriter.errorString();
+			else
+#endif
+			{
+				QImageWriter imageWriter{outFileName};
+				if (!imageWriter.canWrite()) {
+					imageWriter.setFileName(outImageBaseName + defaultFormat);
+					qWarning() << "can't save using the specified format, falling back to" << defaultFormat;
+				}
+				verbosePrintOutFileName(imageWriter.fileName());
+				if (imageQuality > -1)
+					imageWriter.setQuality(imageQuality);
+				if (!imageWriter.write(image))
+					qCritical() << "error saving output image:" << imageWriter.errorString();
+			}
 
 			++j;
 			if (verboseOutput)

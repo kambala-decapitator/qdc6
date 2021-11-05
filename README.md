@@ -19,6 +19,10 @@ Standard `qmake` approach. Create build directory anywhere you like and run
 
     /path/to/qmake /path/to/qdc6.pro
 
+If you want to build with SVG support (requires respective Qt module), also pass `CONFIG+=svg` parameter:
+
+    /path/to/qmake CONFIG+=svg /path/to/qdc6.pro
+
 After that use `jom` or `nmake` on Windows and `make` on other OS.
 
 ## Resources
