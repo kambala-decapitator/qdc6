@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
 			continue;
 		dc6Paths.removeAt(i--);
 
-		const auto dc6InDir = dir.entryList({QLatin1String{"*.dc6"}}, QDir::Files | QDir::Readable);
+		const auto dc6InDir = dir.entryList(QStringList{QLatin1String{"*.dc6"}}, QDir::Files | QDir::Readable);
 		if (verboseOutput)
 			qDebug() << "files in dir" << dir << ':' << dc6InDir;
 		for (const auto& dc6Filename : dc6InDir)
