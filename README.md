@@ -14,6 +14,11 @@ You will need:
 
 1. C++11 compiler.
 2. Qt 4 or higher.
+3. Optionally: CMake.
+
+To build from GUI, simply open `qdc6.pro` or `CMakeLists.txt` in Qt Creator. The following instructions are for command line.
+
+### qmake
 
 Standard `qmake` approach. Create build directory anywhere you like and run
 
@@ -24,6 +29,20 @@ If you want to build with SVG support (requires respective Qt module), also pass
     /path/to/qmake CONFIG+=svg /path/to/qdc6.pro
 
 After that use `jom` or `nmake` on Windows and `make` on other OS.
+
+### CMake
+
+Standard CMake approach.
+
+    cmake -B /path/to/build/dir -S /path/to/source/dir
+
+- pass `-DSVG=ON` if you want to build with SVG support (requires respective Qt module)
+- pass `"-DCMAKE_PREFIX_PATH=<your Qt directory>/lib/cmake"` to find your Qt installation
+- pass other parameters like `-G` as needed
+
+After that:
+
+    cmake --build /path/to/build/dir
 
 ## Resources
 
