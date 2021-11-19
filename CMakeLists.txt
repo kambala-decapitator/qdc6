@@ -24,6 +24,8 @@ if(SVG)
 	add_compile_definitions(SVG_ENABLED=1)
 endif()
 
+add_compile_definitions(QT_DISABLE_DEPRECATED_BEFORE=0x060000)
+
 add_executable(qdc6
 	main.cpp
 	resources.qrc

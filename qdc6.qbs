@@ -8,6 +8,9 @@ QtGuiApplication {
 	]
 
 	cpp.cxxLanguageVersion: "c++11"
+	cpp.defines: [
+		"QT_DISABLE_DEPRECATED_BEFORE=0x060000",
+	]
 
 	Depends {
 		condition: svg
