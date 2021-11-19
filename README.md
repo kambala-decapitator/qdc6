@@ -16,7 +16,7 @@ You will need:
 2. Qt 4 or higher.
 3. Optionally: CMake.
 
-To build from GUI, simply open `qdc6.pro` or `CMakeLists.txt` in Qt Creator. The following instructions are for command line.
+To build from GUI, simply open `qdc6.pro`, `qdc6.qbs` or `CMakeLists.txt` in Qt Creator. The following instructions are for command line.
 
 ### qmake
 
@@ -29,6 +29,15 @@ If you want to build with SVG support (requires respective Qt module), also pass
     /path/to/qmake CONFIG+=svg /path/to/qdc6.pro
 
 After that use `jom` or `nmake` on Windows and `make` on other OS.
+
+### Qbs
+
+Standard Qbs approach. From the repo directory run
+
+    qbs -d /path/to/build/dir
+
+- pass `products.qdc6.svg:true` if you want to build with SVG support (requires respective Qt module)
+- pass other parameters like `-j` as needed
 
 ### CMake
 
