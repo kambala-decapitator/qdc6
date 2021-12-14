@@ -116,6 +116,7 @@ int main(int argc, char* argv[])
 	const Options transparentColorOpts{"-t", "--transparent-color"};
 	const Options outDirOpts{"-o", "--out-dir"};
 	const Options separateDirOpts{"-d", "--separate-dir"};
+	const Options firstFrameOnlyOpts{"--first-frame-only"};
 	const Options verboseOpts{"-v", "--verbose"};
 	const Options treatArgsAsPositionalsOpt{"--"};
 	const Options supportedFormatsOpts{"-l", "--list-supported-formats"};
@@ -140,6 +141,7 @@ int main(int argc, char* argv[])
 		qDebug() << transparentColorOpts << " <str>\tColor to use as transparent, defaults to " << defaultTransparentColorStr.constData() << ", see QColor::setNamedColor() for full list of supported formats";
 		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to current working directory";
 		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
+		qDebug() << firstFrameOnlyOpts << "\t\tSave only first frame of multiframe images, ignores" << separateDirOpts;
 		qDebug() << verboseOpts << "\t\t\tVerbose output";
 		qDebug();
 		qDebug() << supportedFormatsOpts << "\tPrint supported image formats";
@@ -154,6 +156,7 @@ int main(int argc, char* argv[])
 	auto transparentColor = defaultTransparentColor;
 	QString outDirPath;
 	auto useSeparateDir = false;
+	auto saveOnlyFirstFrame = false;
 	auto treatArgsAsPositionals = false;
 	auto verboseOutput = false;
 	auto showSupportedFormats = false;
@@ -208,6 +211,8 @@ int main(int argc, char* argv[])
 			});
 		else if (containsOption(separateDirOpts, argv[i]))
 			useSeparateDir = true;
+		else if (containsOption(firstFrameOnlyOpts, argv[i]))
+			saveOnlyFirstFrame = true;
 		else if (containsOption(verboseOpts, argv[i]))
 			verboseOutput = true;
 		else if (containsOption(treatArgsAsPositionalsOpt, argv[i]))
@@ -298,9 +303,15 @@ int main(int argc, char* argv[])
 		ds.skipRawData(sizeof header.terminator);
 		ds >> header.directions;
 		ds >> header.framesPerDirection;
-		const auto framesTotal = header.directions * header.framesPerDirection;
+		auto framesTotal = header.directions * header.framesPerDirection;
 		if (verboseOutput)
 			qDebug() << header.directions << "direction(s) with" << header.framesPerDirection << "frame(s) =" << framesTotal << "frames total";
+
+		if (saveOnlyFirstFrame) {
+			if (framesTotal > 1 && verboseOutput)
+				qDebug() << "saving only first frame from a multiframe image";
+			framesTotal = 1;
+		}
 
 		std::vector<uint32_t> frameIndexes;
 		frameIndexes.resize(framesTotal);
