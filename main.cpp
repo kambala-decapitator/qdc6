@@ -347,7 +347,7 @@ int main(int argc, char* argv[])
 			ds >> frameHeader.length;
 
 			if (verboseOutput)
-				qDebug() << "width =" << frameHeader.width << ", height =" << frameHeader.height << ", length =" << frameHeader.length;
+				qDebug() << "width =" << frameHeader.width << ", height =" << frameHeader.height << ", length =" << frameHeader.length << ", isFlipped =" << frameHeader.isFlipped;
 
 			std::vector<QRgb> pixels(frameHeader.width * frameHeader.height, transparentColor);
 			std::size_t pixI = 0;
