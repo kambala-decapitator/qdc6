@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 #endif
 					;
 		qDebug() << transparentColorOpts << " <str>\tColor to use as transparent, defaults to " << defaultTransparentColorStr.constData() << ", see QColor::setNamedColor() for full list of supported formats";
-		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to current working directory";
+		qDebug() << outDirOpts << " <directory>\tWhere to save output files, defaults to input file's directory";
 		qDebug() << separateDirOpts << "\t\tSave multiframe images in a directory named after the input file";
 		qDebug() << firstFrameOnlyOpts << "\t\tSave only first frame of multiframe images, ignores" << separateDirOpts;
 		qDebug() << verboseOpts << "\t\t\tVerbose output";
