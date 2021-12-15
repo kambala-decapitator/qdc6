@@ -367,7 +367,7 @@ int main(int argc, char* argv[])
 				else {
 					i += pixelsToAdd;
 
-					for (std::size_t k = 0; k < pixelsToAdd; ++k, ++pixI) {
+					for (std::size_t k = 0; k < pixelsToAdd && pixI < pixels.size(); ++k, ++pixI) {
 						ds >> pixel;
 						pixels[pixI] = colorPalette[pixel];
 					}
