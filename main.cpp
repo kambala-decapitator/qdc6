@@ -318,10 +318,8 @@ int main(int argc, char* argv[])
 		for (std::size_t i = 0; i < framesTotal; ++i)
 			ds >> frameIndexes[i];
 
-		const auto dc6BaseName = QFileInfo{f}.completeBaseName();
-		auto outImageBasePath = dc6BaseName;
-		if (!outDirPath.isEmpty())
-			outImageBasePath.prepend(outDirPath + '/');
+		const QFileInfo dc6FileInfo{f};
+		auto outImageBasePath = QString{QLatin1String{"%1/%2"}}.arg(outDirPath.isEmpty() ? dc6FileInfo.path() : outDirPath, dc6FileInfo.completeBaseName());
 		if (framesTotal > 1) {
 			if (useSeparateDir) {
 				QDir{outImageBasePath}.mkpath(".");
