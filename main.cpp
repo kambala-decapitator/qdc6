@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
 			ds.skipRawData(sizeof frameHeader.offsetX);
 			ds.skipRawData(sizeof frameHeader.offsetY);
 			ds.skipRawData(sizeof frameHeader.alwaysZero);
-			ds >> frameHeader.nextFrameIndex;
+			ds.skipRawData(sizeof frameHeader.nextFrameIndex);
 			ds >> frameHeader.length;
 
 			if (verboseOutput)
